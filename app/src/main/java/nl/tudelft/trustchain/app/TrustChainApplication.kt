@@ -41,6 +41,7 @@ import nl.tudelft.trustchain.app.service.TrustChainService
 import nl.tudelft.trustchain.common.DemoCommunity
 import nl.tudelft.trustchain.common.MarketCommunity
 import nl.tudelft.trustchain.common.bitcoin.WalletService
+import nl.tudelft.trustchain.common.ebsi.EBSIAPI
 import nl.tudelft.trustchain.common.eurotoken.GatewayStore
 import nl.tudelft.trustchain.common.eurotoken.TransactionRepository
 import nl.tudelft.trustchain.currencyii.CoinCommunity
@@ -60,6 +61,9 @@ class TrustChainApplication : Application() {
 
         defaultCryptoProvider = AndroidCryptoProvider
         initIPv8()
+
+        EBSIAPI.init(this)
+        //EBSIAPI.test(this)
     }
 
     private fun initIPv8() {
