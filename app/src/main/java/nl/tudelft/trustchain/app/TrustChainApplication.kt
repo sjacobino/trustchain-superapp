@@ -57,13 +57,14 @@ import nl.tudelft.gossipML.sqldelight.Database as MLDatabase
 @ExperimentalUnsignedTypes
 class TrustChainApplication : Application() {
     override fun onCreate() {
+
         super.onCreate()
 
         defaultCryptoProvider = AndroidCryptoProvider
         initIPv8()
 
         EBSIAPI.init(this)
-        //EBSIAPI.test(this)
+        EBSIAPI.test(this)
     }
 
     private fun initIPv8() {
