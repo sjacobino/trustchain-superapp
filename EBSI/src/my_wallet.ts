@@ -70,9 +70,7 @@ async function createAuthenticationResponse(authenticationRequest: string){
   console.log(authenticationJWT)
 
   const signer = didJWT.ES256KSigner(keyPair.privateKey)
-  const timeOffset = 30 * 60 //Seems to be a time offset error with the server
-  const offsetCreationTime = epochTime()
-  const expTime = offsetCreationTime + (15 * 60)
+  const expTime = epochTime() + (15 * 60)
 
   const authenticationIssuer = authenticationJWT.payload.iss
   const authenticationRequestNonce = authenticationJWT.payload.nonce
