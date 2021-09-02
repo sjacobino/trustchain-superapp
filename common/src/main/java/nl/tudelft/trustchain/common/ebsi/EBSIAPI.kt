@@ -8,13 +8,16 @@ import com.android.volley.RequestQueue
 import com.android.volley.VolleyError
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
+import nl.tudelft.trustchain.common.BuildConfig
 import org.json.JSONArray
 import org.json.JSONObject
+import java.lang.Exception
 import java.net.URLEncoder
 
 open class EBSIAPI {
     companion object {
-        val server = "https://api.ebsi.xyz"
+        val server = "https://api.preprod.ebsi.eu"
+
         private lateinit var queue: RequestQueue
 
         fun get(api: String, path: String?, params: String?, onSuccess: (String) -> Unit, onError: (VolleyError) -> Unit) {
@@ -43,13 +46,13 @@ open class EBSIAPI {
                 url += "/$path"
             }
 
-            val stringRequest = object: StringRequest(Method.POST, url,
+            val stringRequest = object : StringRequest(Method.POST, url,
                 { response ->
                     onSuccess(response)
                 },
                 {
                     onError(it)
-                }){
+                }) {
                 override fun getBody(): ByteArray {
                     return body.toByteArray(Charsets.UTF_8)
                 }
@@ -67,13 +70,13 @@ open class EBSIAPI {
                 url += "/$path"
             }
 
-            val stringRequest = object: StringRequest(Method.PUT, url,
+            val stringRequest = object : StringRequest(Method.PUT, url,
                 { response ->
                     onSuccess(response)
                 },
                 {
                     onError(it)
-                }){
+                }) {
                 override fun getBody(): ByteArray {
                     return body.toByteArray(Charsets.UTF_8)
                 }
@@ -89,9 +92,11 @@ open class EBSIAPI {
             if (!::queue.isInitialized) {
                 queue = Volley.newRequestQueue(context)!!
             }
+
+            test()
         }
 
-        fun logError(tag: String, error: VolleyError) {
+        fun logAPIError(tag: String, error: VolleyError) {
             Log.e("$tag (data)", String(error.networkResponse.data, Charsets.UTF_8))
             error.networkResponse.allHeaders?.forEach {
                 Log.e("$tag (header)", "${it.name}: ${it.value}")
@@ -99,28 +104,26 @@ open class EBSIAPI {
             error.printStackTrace()
         }
 
-        fun URLEncodeParams(paramsMap: Map<String, String?>) : String {
-            return paramsMap.filterValues { s -> !s.isNullOrEmpty() }.
-            entries.joinToString(separator="&", transform = {pair ->
-                "${URLEncoder.encode(pair.component1(), "UTF-8")}=${URLEncoder.encode(pair.component2(), "UTF-8")}" })
+        fun URLEncodeParams(paramsMap: Map<String, String?>): String {
+            return paramsMap.filterValues { s -> !s.isNullOrEmpty() }.entries.joinToString(separator = "&", transform = { pair ->
+                "${URLEncoder.encode(pair.component1(), "UTF-8")}=${URLEncoder.encode(pair.component2(), "UTF-8")}"
+            })
         }
 
-        fun listToJSONArray(list: List<String>) : JSONArray {
+        fun listToJSONArray(list: List<String>): JSONArray {
             val jsonArray = JSONArray()
-            list.forEach{s -> jsonArray.put(s)}
+            list.forEach { s -> jsonArray.put(s) }
             return jsonArray
         }
 
-        fun mapToJSONObject(map: Map<String, String>) : JSONObject{
+        fun mapToJSONObject(map: Map<String, String>): JSONObject {
             val jsonObject = JSONObject()
-            map.forEach{ (k, v) -> jsonObject.put(k, v)}
+            map.forEach { (k, v) -> jsonObject.put(k, v) }
             return jsonObject
         }
 
-        fun test(context: Context) {
-            init(context)
-
-            //DID.getDID("did:ebsi:0xec457d0a974c48d5685a7efa03d137dc8bbde7e3")
+        fun test() {
+            DID.getDID("did:ebsi:DfPaUdYwuzcqFoiMDSrUX8aQyZnr2SesH3vDVASYv8PE")
 
             /*Wallet.authenticate("urn:ietf:params:oauth:grant-type:jwt-bearer",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
@@ -140,8 +143,8 @@ open class EBSIAPI {
                 "<bytes for base64>".toByteArray(Charsets.UTF_8))
             IdentityHub.getAttribute("0x7ee0d94aab0e4f36eae85127056de08433591304a83ff8801bb9212b624f1321")*/
 
-            /*TrustedIssuersRegistry.getIssuers()
-            TrustedIssuersRegistry.getIssuer("did:ebsi:0x464190367BE948210608a46847bed183607f685A")*/
+            TrustedIssuersRegistry.getIssuers(pageSize = 2)
+            TrustedIssuersRegistry.getIssuer("did:ebsi:0x464190367BE948210608a46847bed183607f685A")
 
             /*VerifiableCredential.createCredential(listOf("VerifiableCredential", "EssifVerifiableID"),
                 "did:ebsi:0xec457d0a974c48d5685a7efa03d137dc8bbde7e3",
@@ -189,24 +192,27 @@ open class EBSIAPI {
         }
     }
 
-    class DID: EBSIAPI() {
+    class DID : EBSIAPI() {
         companion object {
-            const val api = "did/v1/identifiers"
+            const val api = "did-registry/v2/identifiers"
 
-            fun getDID(did: String) : JSONObject? {
+            fun getDID(did: String): JSONObject? {
                 var DID: JSONObject? = null
                 get(api, did, null, { response ->
                     //JSON response
                     Log.e("DIDAPI", response)
                     DID = JSONObject(response)
                 }, { error ->
-                    logError("DID.getDID", error)
+                    logAPIError("DID.getDID", error)
                 })
                 return DID
             }
         }
     }
 
+    /***
+     * Wallet will be a library in V2. API deprecated.
+     */
     class Wallet : EBSIAPI() {
         companion object {
             fun authenticate(grantType: String, assertion: String, scope: String) {
@@ -216,15 +222,15 @@ open class EBSIAPI {
                 jsonBody.put("grantType", grantType)
                 jsonBody.put("assertion", assertion)
                 jsonBody.put("scope", scope)
-                
+
                 post(api, null, jsonBody.toString(), { response ->
                     Log.e("Wallet.authenticate", response)
                 }, { error ->
-                    logError("Wallet.authenticate", error)
+                    logAPIError("Wallet.authenticate", error)
                 })
             }
 
-            fun sign(issuer: String, payload: String, type: String) : String?{
+            fun sign(issuer: String, payload: String, type: String): String? {
                 val api = "wallet/v1/signatures"
 
                 val jsonBody = JSONObject()
@@ -232,14 +238,14 @@ open class EBSIAPI {
                 jsonBody.put("payload", payload)
                 jsonBody.put("type", type)
 
-                var jws : String? = null
+                var jws: String? = null
 
                 post(api, null, jsonBody.toString(), { response ->
                     Log.e("Wallet.sign", response)
                     val jsonResponse = JSONObject(response)
                     jws = jsonResponse.getString("jws")
                 }, { error ->
-                    logError("Wallet.sign", error)
+                    logAPIError("Wallet.sign", error)
                 })
 
                 return jws
@@ -254,12 +260,15 @@ open class EBSIAPI {
                 post(api, null, jsonBody.toString(), { response ->
                     Log.e("Wallet.validate", response)
                 }, { error ->
-                    logError("Wallet.validate", error)
+                    logAPIError("Wallet.validate", error)
                 })
             }
         }
     }
 
+    /***
+     * IdentityHub API deprecated in V2
+     */
     class IdentityHub : EBSIAPI() {
         companion object {
             fun login(grantType: String, assertion: String) {
@@ -272,14 +281,14 @@ open class EBSIAPI {
                 post(api, null, jsonBody.toString(), { response ->
                     Log.e("IdentityHub.login", response)
                 }, { error ->
-                    logError("IdentityHub.login", error)
+                    logAPIError("IdentityHub.login", error)
                 })
             }
 
             /***
              * @param type must be url encoded
              */
-            fun getAttributes(did: String, type: String? = null, pageBefore: String? = null, pageAfter: String? = null, pageSize: String? = null) : JSONObject? {
+            fun getAttributes(did: String, type: String? = null, pageBefore: String? = null, pageAfter: String? = null, pageSize: Int? = null): JSONObject? {
                 val api = "identity-hub/v1/attributes"
                 var attributes: JSONObject? = null
 
@@ -288,7 +297,7 @@ open class EBSIAPI {
                     "type" to type,
                     "page[before]" to pageBefore,
                     "page[after]" to pageAfter,
-                    "page[size]" to pageSize)
+                    "page[size]" to "$$pageSize")
 
                 val params = URLEncodeParams(paramsMap)
 
@@ -297,7 +306,7 @@ open class EBSIAPI {
                     Log.e("IH.getAttributes", response)
                     attributes = JSONObject(response)
                 }, { error ->
-                    logError("IH.getAttributes", error)
+                    logAPIError("IH.getAttributes", error)
                 })
                 return attributes
             }
@@ -319,11 +328,11 @@ open class EBSIAPI {
                     //JSON response
                     Log.e("IH.storeAttribute", response)
                 }, { error ->
-                    logError("IH.storeAttribute", error)
+                    logAPIError("IH.storeAttribute", error)
                 })
             }
 
-            fun getAttribute(hash: String) : JSONObject? {
+            fun getAttribute(hash: String): JSONObject? {
                 val api = "identity-hub/v1/attributes"
                 var attribute: JSONObject? = null
 
@@ -332,7 +341,7 @@ open class EBSIAPI {
                     Log.e("IH.getAttribute", response)
                     attribute = JSONObject(response)
                 }, { error ->
-                    logError("IH.getAttribute", error)
+                    logAPIError("IH.getAttribute", error)
                 })
 
                 return attribute
@@ -342,13 +351,12 @@ open class EBSIAPI {
 
     class TrustedIssuersRegistry : EBSIAPI() {
         companion object {
-            const val api = "trusted-issuers-registry/v1/issuers"
+            const val api = "trusted-issuers-registry/v2/issuers"
 
-            fun getIssuers(pageBefore: String? = null, pageAfter: String? = null, pageSize: String? = null) : JSONObject? {
+            fun getIssuers(pageAfter: String? = null, pageSize: Int? = null): JSONObject? {
                 var paramsMap = mapOf(
-                    "page[before]" to pageBefore,
                     "page[after]" to pageAfter,
-                    "page[size]" to pageSize)
+                    "page[size]" to "$pageSize")
 
                 // Keep an eye out if empty params is a problem (? unnecessarily appended to url)
                 val params = URLEncodeParams(paramsMap)
@@ -360,12 +368,12 @@ open class EBSIAPI {
                     Log.e("TIR.getIssuers", response)
                     issuers = JSONObject(response)
                 }, { error ->
-                    logError("TIR.getIssuers", error)
+                    logAPIError("TIR.getIssuers", error)
                 })
                 return issuers
             }
 
-            fun getIssuer(did: String) :JSONObject? {
+            fun getIssuer(did: String): JSONObject? {
                 var issuer: JSONObject? = null
 
                 get(api, did, null, { response ->
@@ -373,14 +381,17 @@ open class EBSIAPI {
                     Log.e("TIR.getIssuer", response)
                     issuer = JSONObject(response)
                 }, { error ->
-                    logError("TIR.getIssuer", error)
+                    logAPIError("TIR.getIssuer", error)
                 })
                 return issuer
             }
         }
     }
 
-    class VerifiableCredential: EBSIAPI() {
+    /***
+     * VerifiableCredential will be a library in V2. API deprecated.
+     */
+    class VerifiableCredential : EBSIAPI() {
         companion object {
             fun createCredential(types: List<String>, issuer: String, credentialSubject: Map<String, String>) {
                 val api = "verifiable-credential/v1/credentials"
@@ -393,7 +404,7 @@ open class EBSIAPI {
                 post(api, null, jsonBody.toString(), { response ->
                     Log.e("VC.createCredential", response)
                 }, { error ->
-                    logError("VC.createCredential", error)
+                    logAPIError("VC.createCredential", error)
                 })
             }
 
@@ -409,12 +420,15 @@ open class EBSIAPI {
                 post(api, null, jsonBody.toString(), { response ->
                     Log.e("VC.validateCredential", response)
                 }, { error ->
-                    logError("VC.validateCredential", error)
+                    logAPIError("VC.validateCredential", error)
                 })
             }
         }
     }
 
+    /***
+     * VerifiablePresentation will be a library in V2. API deprecated.
+     */
     class VerifiablePresentation : EBSIAPI() {
         companion object {
             fun createPresentation(credentials: List<String>, issuer: String) {
@@ -427,7 +441,7 @@ open class EBSIAPI {
                 post(api, null, jsonBody.toString(), { response ->
                     Log.e("VP.createPresentation", response)
                 }, { error ->
-                    logError("VP.createPresentation", error)
+                    logAPIError("VP.createPresentation", error)
                 })
             }
 
@@ -445,7 +459,7 @@ open class EBSIAPI {
                 post(api, null, jsonBody.toString(), { response ->
                     Log.e("VP.validatePresentation", response)
                 }, { error ->
-                    logError("VP.validatePresentation", error)
+                    logAPIError("VP.validatePresentation", error)
                 })
             }
         }

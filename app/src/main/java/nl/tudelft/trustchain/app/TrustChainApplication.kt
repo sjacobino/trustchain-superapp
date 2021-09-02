@@ -64,7 +64,6 @@ class TrustChainApplication : Application() {
         initIPv8()
 
         EBSIAPI.init(this)
-        EBSIAPI.test(this)
     }
 
     private fun initIPv8() {
