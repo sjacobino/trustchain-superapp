@@ -18,14 +18,14 @@ export const didDocument = {
     '@context': 'https://w3id.org/did/v1',
     id: did,
     verificationMethod:[{
-        id: did + '#key-1',
+        id: did + '#keys-1',
         type:'Secp256k1VerificationKey2018',
         controller: did,
         publicKeyHex: keyPair.publicKey}],
     authentication:[
         did],
     assertionMethod:[
-        did + '#key-1']
+        did + '#keys-1']
 }
 
 export const verifiableAuthorisation = {
@@ -85,10 +85,10 @@ async function createAuthenticationResponse(authenticationRequest: string){
       nonce: authenticationRequestNonce,
       sub: thumbprint,
       sub_jwk: publicKeyJwk,
-      sub_did_verification_method_uri: did + '#key-1'
+      sub_did_verification_method_uri: did + '#keys-1'
     },
     { issuer: did, signer },
-    { alg: 'ES256K', kid: did + '#key-1' }
+    { alg: 'ES256K', kid: did + '#keys-1' }
   )
 
   return authenticationResponse
