@@ -8,10 +8,8 @@ import com.android.volley.RequestQueue
 import com.android.volley.VolleyError
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
-import nl.tudelft.trustchain.common.BuildConfig
 import org.json.JSONArray
 import org.json.JSONObject
-import java.lang.Exception
 import java.net.URLEncoder
 
 open class EBSIAPI {
@@ -21,13 +19,7 @@ open class EBSIAPI {
         private lateinit var queue: RequestQueue
 
         fun get(api: String, path: String?, params: String?, onSuccess: (String) -> Unit, onError: (VolleyError) -> Unit) {
-            var url = "$server/$api"
-            if (path != null) {
-                url += "/$path"
-            }
-            if (params != null) {
-                url += "?$params"
-            }
+            var url = getURL(server, api, path, params)
 
             val stringRequest = StringRequest(Request.Method.GET, url,
                 { response ->
@@ -41,10 +33,7 @@ open class EBSIAPI {
         }
 
         fun post(api: String, path: String?, body: String, onSuccess: (String) -> Unit, onError: (VolleyError) -> Unit) {
-            var url = "$server/$api"
-            if (path != null) {
-                url += "/$path"
-            }
+            var url = getURL(server, api, path)
 
             val stringRequest = object : StringRequest(Method.POST, url,
                 { response ->
@@ -65,10 +54,7 @@ open class EBSIAPI {
         }
 
         fun put(api: String, path: String?, body: String, onSuccess: (String) -> Unit, onError: (VolleyError) -> Unit) {
-            var url = "$server/$api"
-            if (path != null) {
-                url += "/$path"
-            }
+            var url = getURL(server, api, path)
 
             val stringRequest = object : StringRequest(Method.PUT, url,
                 { response ->
@@ -88,12 +74,24 @@ open class EBSIAPI {
             queue.add(stringRequest)
         }
 
+        fun getURL(server: String, api: String, path: String? = null, params: String? = null): String {
+            var url = "$server/$api"
+            if (path != null) {
+                url += "/$path"
+            }
+            if (params != null) {
+                url += "?$params"
+            }
+
+            return url
+        }
+
         fun init(context: Context) {
             if (!::queue.isInitialized) {
                 queue = Volley.newRequestQueue(context)!!
             }
 
-            test()
+            //test()
         }
 
         fun logAPIError(tag: String, error: VolleyError) {
