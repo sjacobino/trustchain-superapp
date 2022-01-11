@@ -7,7 +7,6 @@ import {
   Options,
 } from "@cef-ebsi/verifiable-credential";
 import { Resolver } from "did-resolver";
-import { getResolver } from "@cef-ebsi/did-resolver";
 
 const credential = createCredential({
   credentialSubject: { name: "alice" },
@@ -82,12 +81,8 @@ const providerConfig = {
   rpcUrl: "https://api.intebsi.xyz/blockchain/besu",
 };
 
-// getResolver will return an object with a key/value pair of { "ebsi": resolver } where resolver is a function used by the generic DID resolver.
-const ebsiDidResolver = getResolver(providerConfig);
-const didResolver = new Resolver(ebsiDidResolver);
-
 const options = {
-  tirUrl: "https://api.test.intebsi.xyz/trusted-issuers-registry/v2/issuers",
+  tirUrl: "https://api.preprod.ebsi.eu/trusted-issuers-registry/v2/issuers",
   resolver: "https://api.test.intebsi.xyz/did-registry/v2/identifiers",
 };
 

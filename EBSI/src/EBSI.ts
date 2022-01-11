@@ -1,1 +1,0 @@
-export const DID_RESOLVER = 'https://api.preprod.ebsi.eu/did-registry/v2/identifiers'

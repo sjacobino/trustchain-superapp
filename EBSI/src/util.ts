@@ -1,4 +1,12 @@
 import * as didJWT from '@cef-ebsi/did-jwt';
+import { createHash } from 'crypto'
+const jsonld = require('jsonld');
+
+export function sha256(data: string): string {
+    const hash = createHash('sha256');
+    hash.update(data);
+    return hash.digest('hex')
+}
 
 export function epochTime(): number {
     return Math.round(Date.now() / 1000)
@@ -15,3 +23,14 @@ export function printJWT(JWT: any) {
         console.log(JSON.stringify(didJWT.decodeJWT(JWT), null, 2))
     }
 }
+
+export async function canonized(doc: {}) {
+    return jsonld.canonize(doc, {
+        algorithm: 'URDNA2015',
+        format: 'application/n-quads'
+      });
+}
+
+if (require.main === module){
+    console.log(sha256("hello world"))
+  }
